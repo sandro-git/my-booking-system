@@ -36,24 +36,450 @@ try {
 }
 
 const email = session.data.user?.email;
+const userId = session.data.user?.id;
+
+// Define TypeScript interfaces for our database entities
+interface Resource {
+    id: string;
+    name: string;
+    description?: string;
+    type?: string;
+    location?: string;
+    [key: string]: any;
+}
+
+interface Availability {
+    id: string;
+    resource_id: string;
+    start_time: string;
+    end_time: string;
+    [key: string]: any;
+}
+
+interface Booking {
+    id: string;
+    user_id: string;
+    resource_id: string;
+    start_time: string;
+    end_time: string;
+    status?: string;
+    resource?: Resource;
+    [key: string]: any;
+}
+
+// Fetch resources
+const { data: resources, error: resourcesError } = await supabase
+    .from("resources")
+    .select("*") as { data: Resource[] | null, error: any };
+
+// Fetch availabilities
+const { data: availabilities, error: availabilitiesError } = await supabase
+    .from("availabilities")
+    .select("*") as { data: Availability[] | null, error: any };
+
+// Fetch bookings for the current user
+const { data: bookings, error: bookingsError } = await supabase
+    .from("bookings")
+    .select("*, resource:resources(*)")
+    .eq("user_id", userId) as { data: Booking[] | null, error: any };
+
+const hasError = resourcesError || availabilitiesError || bookingsError;
 ---
 
 <Layout title="Dashboard">
-    <!-- Intégration du Header avec isLoggedIn=true pour afficher "Sign out" au lieu de "Sign in" -->
     <Header isLoggedIn={true} />
 
     <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-4xl mx-auto">
-            <div class="bg-white shadow sm:rounded-lg">
-                <div class="px-4 py-5 sm:p-6">
-                    <h1 class="text-3xl font-extrabold text-gray-900">
-                        Welcome {email}
-                    </h1>
-                    <p class="mt-3 text-base text-gray-600">
-                        We are happy to see you here
+        <div class="max-w-7xl mx-auto">
+            <div class="pb-5 border-b border-gray-200 mb-8">
+                <h1 class="text-3xl font-extrabold text-gray-900">
+                    Welcome {email}
+                </h1>
+                <p class="mt-2 text-base text-gray-600">
+                    Manage your bookings and check resource availability
+                </p>
+            </div>
+
+            {
+                hasError && (
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-8">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg
+                                    class="h-5 w-5 text-red-400"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                        clip-rule="evenodd"
+                                    />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800">
+                                    Error loading data
+                                </h3>
+                                <div class="mt-2 text-sm text-red-700">
+                                    <p>
+                                        There was an error fetching your data.
+                                        Please refresh the page or try again
+                                        later.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            <!-- Your Bookings Section -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+                <div
+                    class="px-4 py-5 sm:px-6 flex justify-between items-center"
+                >
+                    <div>
+                        <h2 class="text-lg leading-6 font-medium text-gray-900">
+                            Your Bookings
+                        </h2>
+                        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                            View and manage your current reservations
+                        </p>
+                    </div>
+                    <a
+                        href="/bookings/new"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                    >
+                        New Booking
+                    </a>
+                </div>
+                <div class="border-t border-gray-200">
+                    {
+                        !bookingsError && bookings && bookings.length > 0 ? (
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th
+                                                scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                            >
+                                                Resource
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                            >
+                                                Start Time
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                            >
+                                                End Time
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                            >
+                                                Status
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                            >
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        {bookings.map((booking) => (
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {booking.resource?.name ||
+                                                        "Unknown resource"}
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {new Date(
+                                                        booking.start_time,
+                                                    ).toLocaleString()}
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {new Date(
+                                                        booking.end_time,
+                                                    ).toLocaleString()}
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <span
+                                                        class={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                      ${
+                                                          booking.status ===
+                                                          "confirmed"
+                                                              ? "bg-green-100 text-green-800"
+                                                              : booking.status ===
+                                                                  "pending"
+                                                                ? "bg-yellow-100 text-yellow-800"
+                                                                : "bg-gray-100 text-gray-800"
+                                                      }`}
+                                                    >
+                                                        {booking.status ||
+                                                            "Unknown"}
+                                                    </span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <a
+                                                        href={`/bookings/${booking.id}`}
+                                                        class="text-indigo-600 hover:text-indigo-900 mr-3"
+                                                    >
+                                                        View
+                                                    </a>
+                                                    <a
+                                                        href={`/bookings/${booking.id}/edit`}
+                                                        class="text-indigo-600 hover:text-indigo-900 mr-3"
+                                                    >
+                                                        Edit
+                                                    </a>
+                                                    <button
+                                                        data-booking-id={
+                                                            booking.id
+                                                        }
+                                                        class="text-red-600 hover:text-red-900 cancel-booking-btn"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div class="px-6 py-10 text-center">
+                                <p class="text-gray-500">
+                                    You don't have any bookings yet.
+                                </p>
+                                <a
+                                    href="/bookings/new"
+                                    class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 "
+                                >
+                                    Book a Resource
+                                </a>
+                            </div>
+                        )
+                    }
+                </div>
+            </div>
+
+            <!-- Available Resources Section -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+                <div class="px-4 py-5 sm:px-6">
+                    <h2 class="text-lg leading-6 font-medium text-gray-900">
+                        Available Resources
+                    </h2>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                        Browse resources available for booking
                     </p>
+                </div>
+                <div class="border-t border-gray-200">
+                    {
+                        !resourcesError && resources && resources.length > 0 ? (
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6 ">
+                                {resources.map((resource) => (
+                                    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden ">
+                                        <div class="p-5 ">
+                                            <h3 class="text-lg font-medium text-gray-900 ">
+                                                {resource.name}
+                                            </h3>
+                                            <p class="mt-1 text-sm text-gray-500 ">
+                                                {resource.description}
+                                            </p>
+                                            <div class="mt-4 ">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 ">
+                                                    {resource.type}
+                                                </span>
+                                                {resource.location && (
+                                                    <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 ">
+                                                        {resource.location}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div class="mt-6 ">
+                                                <a
+                                                    href={`/resources/${resource.id}`}
+                                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 "
+                                                >
+                                                    View Details
+                                                </a>
+                                                <a
+                                                    href={`/bookings/new?resource=${resource.id}`}
+                                                    class="ml-3 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 "
+                                                >
+                                                    Book Now
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div class="px-6 py-10 text-center ">
+                                <p class="text-gray-500 ">
+                                    No resources available at the moment.
+                                </p>
+                            </div>
+                        )
+                    }
+                </div>
+            </div>
+
+            <!-- Upcoming Availabilities Section -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6">
+                    <h2 class="text-lg leading-6 font-medium text-gray-900">
+                        Upcoming Availabilities
+                    </h2>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                        Check when resources will be available
+                    </p>
+                </div>
+                <div class="border-t border-gray-200">
+                    {
+                        !availabilitiesError &&
+                        availabilities &&
+                        availabilities.length > 0 ? (
+                            <div class="overflow-x-auto ">
+                                <table class="min-w-full divide-y divide-gray-200 ">
+                                    <thead class="bg-gray-50 ">
+                                        <tr>
+                                            <th
+                                                scope="col "
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider "
+                                            >
+                                                Resource
+                                            </th>
+                                            <th
+                                                scope="col "
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider "
+                                            >
+                                                Date
+                                            </th>
+                                            <th
+                                                scope="col "
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider "
+                                            >
+                                                Start Time
+                                            </th>
+                                            <th
+                                                scope="col "
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider "
+                                            >
+                                                End Time
+                                            </th>
+                                            <th
+                                                scope="col "
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider "
+                                            >
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200 ">
+                                        {availabilities.map((availability) => {
+                                            const resourceName =
+                                                resources?.find(
+                                                    (r) =>
+                                                        r.id ===
+                                                        availability.resource_id,
+                                                )?.name || "Unknown";
+                                            const startTime = new Date(
+                                                availability.start_time,
+                                            );
+                                            const endTime = new Date(
+                                                availability.end_time,
+                                            );
+                                            return (
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 ">
+                                                        {resourceName}
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 ">
+                                                        {startTime.toLocaleDateString()}
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 ">
+                                                        {startTime.toLocaleTimeString()}
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 ">
+                                                        {endTime.toLocaleTimeString()}
+                                                    </td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium ">
+                                                        <a
+                                                            href={`/bookings/new?availability=${availability.id}`}
+                                                            class="text-indigo-600 hover:text-indigo-900 "
+                                                        >
+                                                            Book
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div class="px-6 py-10 text-center ">
+                                <p class="text-gray-500 ">
+                                    No upcoming availabilities found.
+                                </p>
+                            </div>
+                        )
+                    }
                 </div>
             </div>
         </div>
     </div>
 </Layout>
+
+<script>
+    // Handle booking cancellation
+    document.addEventListener("DOMContentLoaded", () => {
+        const cancelButtons = document.querySelectorAll<HTMLElement>(".cancel-booking-btn");
+
+        cancelButtons.forEach((button) => {
+            button.addEventListener("click", async (e: Event) => {
+                if (confirm("Are you sure you want to cancel this booking?")) {
+                    // Safely get the booking ID from the event target
+                    const target = e.target as HTMLElement;
+                    const bookingId = target?.dataset?.bookingId;
+                    
+                    if (!bookingId) {
+                        console.error("No booking ID found");
+                        alert("Could not identify booking to cancel. Please try again.");
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(
+                            `/api/bookings/${bookingId}/cancel`,
+                            {
+                                method: "POST",
+                            },
+                        );
+
+                        if (response.ok) {
+                            // Reload the page to reflect the changes
+                            window.location.reload();
+                        } else {
+                            alert(
+                                "Failed to cancel booking. Please try again.",
+                            );
+                        }
+                    } catch (error) {
+                        console.error("Error canceling booking:", error);
+                        alert("An error occurred. Please try again.");
+                    }
+                }
+            });
+        });
+    });
+</script>`,
