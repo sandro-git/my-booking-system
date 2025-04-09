@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
 import { supabase } from "../lib/supabase";
 
 const accessToken = Astro.cookies.get("sb-access-token");
@@ -38,6 +39,9 @@ const email = session.data.user?.email;
 ---
 
 <Layout title="Dashboard">
+    <!-- Intégration du Header avec isLoggedIn=true pour afficher "Sign out" au lieu de "Sign in" -->
+    <Header isLoggedIn={true} />
+
     <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-4xl mx-auto">
             <div class="bg-white shadow sm:rounded-lg">
@@ -48,16 +52,6 @@ const email = session.data.user?.email;
                     <p class="mt-3 text-base text-gray-600">
                         We are happy to see you here
                     </p>
-                    <div class="mt-6">
-                        <form action="/api/auth/signout" class="inline-block">
-                            <button
-                                type="submit"
-                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                            >
-                                Sign out
-                            </button>
-                        </form>
-                    </div>
                 </div>
             </div>
         </div>

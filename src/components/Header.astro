@@ -1,5 +1,10 @@
 ---
 // src/components/Header.astro
+interface Props {
+    isLoggedIn?: boolean;
+}
+
+const { isLoggedIn = false } = Astro.props;
 ---
 
 <header class="bg-white shadow-sm">
@@ -42,13 +47,13 @@
                 </nav>
             </div>
 
-            <!-- Sign In Button -->
+            <!-- Sign In/Out Button -->
             <div class="flex items-center">
                 <a
-                    href="/signin"
+                    href={isLoggedIn ? "/api/auth/signout" : "/signin"}
                     class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
-                    Sign in
+                    {isLoggedIn ? "Sign out" : "Sign in"}
                 </a>
             </div>
 
@@ -127,10 +132,10 @@
             </a>
             <div class="mt-4 pl-3 pr-4">
                 <a
-                    href="/signin"
+                    href={isLoggedIn ? "/api/auth/signout" : "/signin"}
                     class="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700"
                 >
-                    Sign in
+                    {isLoggedIn ? "Sign out" : "Sign in"}
                 </a>
             </div>
         </div>
